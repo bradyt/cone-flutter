@@ -1,7 +1,12 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:package_info/package_info.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +19,7 @@ class ConeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: title,
+      debugShowCheckedModeBanner: false,
       initialRoute: '/',
       theme: ThemeData(
         primarySwatch: Colors.green,
@@ -22,7 +28,6 @@ class ConeApp extends StatelessWidget {
       routes: {
         '/': (context) => Home(),
         '/add-transaction': (context) => AddTransaction(),
-        '/configuration': (context) => Configuration(),
       },
     );
   }
@@ -31,14 +36,6 @@ class ConeApp extends StatelessWidget {
 Widget coneAppBar(context) {
   return AppBar(
     title: Text(title),
-    actions: <Widget>[
-      IconButton(
-        icon: Icon(Icons.settings),
-        onPressed: () {
-          Navigator.pushNamed(context, '/configuration');
-        },
-      )
-    ],
   );
 }
 
@@ -64,26 +61,36 @@ class AddTransaction extends StatelessWidget {
     return Scaffold(
       appBar: coneAppBar(context),
       body: Center(
-        child: RaisedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Submit'),
+        child: Column(
+          children: <Widget>[
+            DateTimePickerFormField(
+              editable: true,
+            ),
+            // TextFormField(
+            //   decoration: InputDecoration(labelText: 'Enter date'),
+            // ),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Enter description'),
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Enter account'),
+            ),
+            TextFormField(
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: 'Enter amount'),
+            ),
+            RaisedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Submit'),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
-// Future<String> setLedgerFile() async {
-//   final prefs = SharedPreferences.getInstance();
-//   return prefs.setString('ledger-file', '.cone.ledger');
-// }
-
-// Future<String> getLedgerFile() async {
-//   final prefs = SharedPreferences.getInstance();
-//   return prefs.getString('ledger-file');
-// }
 
 class Configuration extends StatefulWidget {
   ConfigurationState createState() => ConfigurationState();
@@ -154,66 +161,6 @@ class ConfigurationState extends State<Configuration> {
       ),
     );
   }
-
-  // String _filePath;
-
-  // void getFilePath() async {
-  //   try {
-  //     String filePath = await FilePicker.getFilePath(type: FileType.ANY);
-  //     if (filePath == '') {
-  //       return;
-  //     }
-  //     print("File path: " + filePath);
-  //     setState(() {
-  //       this._filePath = filePath;
-  //     });
-  //   } on PlatformException catch (e) {
-  //     print("Error while picking the file: " + e.toString());
-  //   }
-  // }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return new Scaffold(
-  //     appBar: new AppBar(
-  //       title: new Text('File Picker Example'),
-  //     ),
-  //     body: new Center(
-  //       child: _filePath == null
-  //           ? new Text('No file selected.')
-  //           : new Text('Path' + _filePath),
-  //     ),
-  //     floatingActionButton: new FloatingActionButton(
-  //       onPressed: getFilePath,
-  //       tooltip: 'Select file',
-  //       child: new Icon(Icons.sd_storage),
-  //     ),
-  //   );
-  // }
-}
-
-class OldHome extends StatelessWidget {
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: title,
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () {},
-            )
-          ],
-        ),
-        body: AddTransactionForm(),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: Icon(Icons.add),
-        ),
-      ),
-    );
-  }
 }
 
 class AddTransactionForm extends StatefulWidget {
@@ -251,5 +198,24 @@ class AddTransactionFormState extends State<AddTransactionForm> {
                 ),
               ),
             ]));
+  }
+}
+
+class TransactionStorage {
+  Future<String> get _localPath async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String packageName = packageInfo.packageName;
+    final directory = await getExternalStorageDirectory();
+    return p.join(directory.path, 'Android', 'data', packageName, 'files');
+  }
+
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/.cone.ledger');
+  }
+
+  Future<File> writeTransaction(String transaction) async {
+    final file = await _localFile;
+    return file.writeAsString('$transaction');
   }
 }
