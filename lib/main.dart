@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +22,7 @@ class ConeApp extends StatelessWidget {
       initialRoute: '/',
       theme: ThemeData(
         primarySwatch: Colors.green,
-        accentColor: Colors.yellowAccent,
+        accentColor: Colors.amberAccent,
       ),
       routes: {
         '/': (context) => Home(),
@@ -57,25 +56,76 @@ class Home extends StatelessWidget {
 
 // https://grokonez.com/flutter/flutter-read-write-file-example-path-provider-dartio-example
 class AddTransaction extends StatelessWidget {
+  final FocusNode dateFocus = FocusNode();
+  final FocusNode descriptionFocus = FocusNode();
+  final FocusNode accountFocus = FocusNode();
+  final FocusNode amountFocus = FocusNode();
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: coneAppBar(context),
       body: Center(
         child: Column(
           children: <Widget>[
-            DateTimePickerFormField(
-              editable: true,
-            ),
-            // TextFormField(
-            //   decoration: InputDecoration(labelText: 'Enter date'),
-            // ),
             TextFormField(
+              textInputAction: TextInputAction.next,
+              autofocus: true,
+              focusNode: dateFocus,
+              onFieldSubmitted: (term) {
+                dateFocus.unfocus();
+                descriptionFocus.unfocus();
+                accountFocus.unfocus();
+                amountFocus.unfocus();
+                FocusScope.of(context).requestFocus(descriptionFocus);
+              },
+              decoration: InputDecoration(
+                labelText: 'Enter date',
+                suffixIcon: IconButton(
+                  onPressed: () => showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(0),
+                        lastDate: DateTime(2050),
+                      ),
+                  icon: Icon(
+                    Icons.calendar_today,
+                  ),
+                ),
+              ),
+            ),
+            TextFormField(
+              focusNode: descriptionFocus,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (term) {
+                dateFocus.unfocus();
+                descriptionFocus.unfocus();
+                accountFocus.unfocus();
+                amountFocus.unfocus();
+                FocusScope.of(context).requestFocus(accountFocus);
+              },
               decoration: InputDecoration(labelText: 'Enter description'),
             ),
             TextFormField(
+              focusNode: accountFocus,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (term) {
+                dateFocus.unfocus();
+                descriptionFocus.unfocus();
+                accountFocus.unfocus();
+                amountFocus.unfocus();
+                FocusScope.of(context).requestFocus(amountFocus);
+              },
               decoration: InputDecoration(labelText: 'Enter account'),
             ),
             TextFormField(
+              focusNode: amountFocus,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (term) {
+                dateFocus.unfocus();
+                descriptionFocus.unfocus();
+                accountFocus.unfocus();
+                amountFocus.unfocus();
+              },
               keyboardType: TextInputType.number,
               decoration: InputDecoration(labelText: 'Enter amount'),
             ),
