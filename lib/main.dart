@@ -70,6 +70,8 @@ class AddTransaction extends StatelessWidget {
             TextFormField(
               textInputAction: TextInputAction.next,
               autofocus: true,
+              // try fixing the focus issue by basing off of
+              // https://github.com/liemvo/Flutter_bmi
               focusNode: dateFocus,
               onFieldSubmitted: (term) {
                 dateFocus.unfocus();
