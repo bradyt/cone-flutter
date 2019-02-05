@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:package_info/package_info.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -55,91 +56,174 @@ class Home extends StatelessWidget {
 }
 
 // https://grokonez.com/flutter/flutter-read-write-file-example-path-provider-dartio-example
-class AddTransaction extends StatelessWidget {
+class AddTransaction extends StatefulWidget {
+  AddTransactionState createState() => AddTransactionState();
+}
+
+class AddTransactionState extends State<AddTransaction> {
+  var dateController = TextEditingController();
+  var descriptionController = TextEditingController();
+  var accountController = TextEditingController();
+  var amountController = TextEditingController();
+
+  String date, description, account, amount;
+
   final FocusNode dateFocus = FocusNode();
   final FocusNode descriptionFocus = FocusNode();
   final FocusNode accountFocus = FocusNode();
   final FocusNode amountFocus = FocusNode();
 
+  var _formKey = GlobalKey<FormState>();
+
+  void initState() {
+    super.initState();
+    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  }
+
   Widget build(BuildContext context) {
+    // dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
     return Scaffold(
       appBar: coneAppBar(context),
-      body: Center(
-        child: Column(
+      body: Form(
+        key: _formKey,
+        child: ListView(
           children: <Widget>[
-            TextFormField(
-              textInputAction: TextInputAction.next,
-              autofocus: true,
-              // try fixing the focus issue by basing off of
-              // https://github.com/liemvo/Flutter_bmi
-              focusNode: dateFocus,
-              onFieldSubmitted: (term) {
-                dateFocus.unfocus();
-                descriptionFocus.unfocus();
-                accountFocus.unfocus();
-                amountFocus.unfocus();
-                FocusScope.of(context).requestFocus(descriptionFocus);
-              },
-              decoration: InputDecoration(
-                labelText: 'Enter date',
-                suffixIcon: IconButton(
-                  onPressed: () => showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(0),
-                        lastDate: DateTime(2050),
+            dateFormField(context),
+            descriptionFormField(context),
+            accountFormField(context),
+            amountFormField(),
+            Builder(
+              builder: (BuildContext context) {
+                return RaisedButton(
+                  child: Text('Add'),
+                  onPressed: () {
+                    _formKey.currentState.save();
+                    final snackBar = SnackBar(
+                      content: Text(
+                        '''$date $description
+  $account  $amount
+  assets:checking''',
                       ),
-                  icon: Icon(
-                    Icons.calendar_today,
-                  ),
-                ),
-              ),
-            ),
-            TextFormField(
-              focusNode: descriptionFocus,
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (term) {
-                dateFocus.unfocus();
-                descriptionFocus.unfocus();
-                accountFocus.unfocus();
-                amountFocus.unfocus();
-                FocusScope.of(context).requestFocus(accountFocus);
+                    );
+                    Scaffold.of(context).showSnackBar(snackBar);
+                  },
+                );
               },
-              decoration: InputDecoration(labelText: 'Enter description'),
-            ),
-            TextFormField(
-              focusNode: accountFocus,
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (term) {
-                dateFocus.unfocus();
-                descriptionFocus.unfocus();
-                accountFocus.unfocus();
-                amountFocus.unfocus();
-                FocusScope.of(context).requestFocus(amountFocus);
-              },
-              decoration: InputDecoration(labelText: 'Enter account'),
-            ),
-            TextFormField(
-              focusNode: amountFocus,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (term) {
-                dateFocus.unfocus();
-                descriptionFocus.unfocus();
-                accountFocus.unfocus();
-                amountFocus.unfocus();
-              },
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Enter amount'),
             ),
             RaisedButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Submit'),
+              child: Text('Done'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  TextFormField dateFormField(BuildContext context) {
+    return TextFormField(
+      // initialValue: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      controller: dateController,
+      textInputAction: TextInputAction.next,
+      focusNode: dateFocus,
+      onFieldSubmitted: (term) {
+        fieldFocusChange(context, dateFocus, descriptionFocus);
+      },
+      onSaved: (value) {
+        date = value;
+      },
+      decoration: InputDecoration(
+        labelText: 'Enter date',
+        suffixIcon: IconButton(
+          onPressed: () {
+            chooseDate(context, dateController.text);
+          },
+          icon: Icon(
+            Icons.calendar_today,
+          ),
+        ),
+      ),
+    );
+  }
+
+  fieldFocusChange(
+      BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
+    currentFocus.unfocus();
+    FocusScope.of(context).requestFocus(nextFocus);
+  }
+
+  Future chooseDate(BuildContext context, String initialDateString) async {
+    DateTime now = DateTime.now();
+    DateTime initialDate = convertToDate(initialDateString) ?? now;
+    DateTime result = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (result == null) return;
+
+    setState(() {
+      dateController.text = DateFormat('yyyy-MM-dd').format(result);
+    });
+    fieldFocusChange(context, dateFocus, descriptionFocus);
+  }
+
+  DateTime convertToDate(String input) {
+    try {
+      var d = new DateFormat('yyyy-MM-dd').parseStrict(input);
+      return d;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  TextFormField descriptionFormField(BuildContext context) {
+    return TextFormField(
+      controller: descriptionController,
+      autofocus: true,
+      focusNode: descriptionFocus,
+      textInputAction: TextInputAction.next,
+      onSaved: (value) {
+        description = value;
+      },
+      onFieldSubmitted: (term) {
+        fieldFocusChange(context, descriptionFocus, accountFocus);
+      },
+      decoration: InputDecoration(labelText: 'Enter description'),
+    );
+  }
+
+  TextFormField accountFormField(BuildContext context) {
+    return TextFormField(
+      controller: accountController,
+      focusNode: accountFocus,
+      textInputAction: TextInputAction.next,
+      onSaved: (value) {
+        account = value;
+      },
+      onFieldSubmitted: (term) {
+        fieldFocusChange(context, accountFocus, amountFocus);
+      },
+      decoration: InputDecoration(labelText: 'Enter account'),
+    );
+  }
+
+  TextFormField amountFormField() {
+    return TextFormField(
+      controller: amountController,
+      focusNode: amountFocus,
+      textInputAction: TextInputAction.done,
+      onSaved: (value) {
+        amount = value;
+      },
+      onFieldSubmitted: (term) {
+        amountFocus.unfocus();
+      },
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(labelText: 'Enter amount'),
     );
   }
 }
