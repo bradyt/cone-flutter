@@ -1,9 +1,50 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:package_info/package_info.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import 'package:cone/appbar.dart';
+
+// enum Currency { USD, EUR, JPY, GBP, AUD, CAD, CHF, CNH, SEK, NZD }
+List<String> currencies = [
+  'USD',
+  'EUR',
+  'JPY',
+  'GBP',
+  'AUD',
+  'CAD',
+  'CHF',
+  'CNY',
+  'SEK',
+  'NZD',
+];
+
+String showTransaction(
+  String date,
+  String description,
+  String account1,
+  String amount1,
+  String currency1,
+  String account2,
+  String amount2,
+  String account3,
+  String amount3,
+  String account4,
+  String amount4,
+) {
+  return '''
+
+$date $description
+  $account1  $amount1 $currency1
+  $account2  $amount2 USD
+  $account3  $amount3 USD
+  $account4  $amount4 USD
+''';
+}
 
 // https://grokonez.com/flutter/flutter-read-write-file-example-path-provider-dartio-example
 class AddTransaction extends StatefulWidget {
@@ -15,17 +56,37 @@ class AddTransactionState extends State<AddTransaction> {
   var descriptionController = TextEditingController();
   var account1Controller = TextEditingController();
   var amount1Controller = TextEditingController();
+  var currency1Controller = TextEditingController();
   var account2Controller = TextEditingController();
   var amount2Controller = TextEditingController();
+  var account3Controller = TextEditingController();
+  var amount3Controller = TextEditingController();
+  var account4Controller = TextEditingController();
+  var amount4Controller = TextEditingController();
 
-  String date, description, account1, amount1, account2, amount2;
+  String date,
+      description,
+      account1,
+      amount1,
+      currency1,
+      account2,
+      amount2,
+      account3,
+      amount3,
+      account4,
+      amount4;
 
   final FocusNode dateFocus = FocusNode();
   final FocusNode descriptionFocus = FocusNode();
   final FocusNode account1Focus = FocusNode();
   final FocusNode amount1Focus = FocusNode();
+  final FocusNode currency1Focus = FocusNode();
   final FocusNode account2Focus = FocusNode();
   final FocusNode amount2Focus = FocusNode();
+  final FocusNode account3Focus = FocusNode();
+  final FocusNode amount3Focus = FocusNode();
+  final FocusNode account4Focus = FocusNode();
+  final FocusNode amount4Focus = FocusNode();
 
   var _formKey = GlobalKey<FormState>();
 
@@ -33,6 +94,7 @@ class AddTransactionState extends State<AddTransaction> {
     super.initState();
     dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
     account1Controller.text = 'expenses:';
+    currency1 = 'USD';
     account2Controller.text = 'assets:checking';
   }
 
@@ -53,13 +115,23 @@ class AddTransactionState extends State<AddTransaction> {
                     child: Text('Add'),
                     onPressed: () {
                       _formKey.currentState.save();
-                      final snackBar = SnackBar(
-                        content: Text(
-                          '''$date $description
-  $account1  $amount1
-  $account2${(amount2 == null) ? '' : '  ' + amount2}''',
-                        ),
+                      String result = showTransaction(
+                        date,
+                        description,
+                        account1,
+                        amount1,
+                        currency1,
+                        account2,
+                        amount2,
+                        account3,
+                        amount3,
+                        account4,
+                        amount4,
                       );
+                      final snackBar = SnackBar(
+                        content: Text(result),
+                      );
+                      TransactionStorage.writeTransaction(result);
                       Scaffold.of(context).showSnackBar(snackBar);
                     },
                   );
@@ -82,9 +154,20 @@ class AddTransactionState extends State<AddTransaction> {
     return Column(
       children: <Widget>[
         account1FormField(context),
-        amount1FormField(),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: amount1FormField(context),
+            ),
+            currency1FormField(context),
+          ],
+        ),
         account2FormField(context),
-        amount2FormField(),
+        amount2FormField(context),
+        account3FormField(context),
+        amount3FormField(context),
+        account4FormField(context),
+        amount4FormField(),
       ],
     );
   }
@@ -177,11 +260,11 @@ class AddTransactionState extends State<AddTransaction> {
     );
   }
 
-  TextFormField amount1FormField() {
+  TextFormField amount1FormField(BuildContext context) {
     return TextFormField(
       controller: amount1Controller,
       focusNode: amount1Focus,
-      textInputAction: TextInputAction.done,
+      textInputAction: TextInputAction.next,
       onSaved: (value) {
         amount1 = value;
       },
@@ -191,6 +274,23 @@ class AddTransactionState extends State<AddTransaction> {
       keyboardType: TextInputType.number,
       decoration: InputDecoration(labelText: 'Enter amount one'),
     );
+  }
+
+  DropdownButton currency1FormField(BuildContext context) {
+    return DropdownButton(
+        value: currency1,
+        items: currencies.map((String val) {
+          return DropdownMenuItem<String>(
+            value: val,
+            child: Text(val),
+          );
+        }).toList(),
+        // hint: Text('Enter currency one'),
+        iconSize: 40.0,
+        onChanged: (newVal) {
+          currency1 = newVal;
+          this.setState(() {});
+        });
   }
 
   TextFormField account2FormField(BuildContext context) {
@@ -208,19 +308,101 @@ class AddTransactionState extends State<AddTransaction> {
     );
   }
 
-  TextFormField amount2FormField() {
+  TextFormField amount2FormField(BuildContext context) {
     return TextFormField(
       controller: amount2Controller,
       focusNode: amount2Focus,
-      textInputAction: TextInputAction.done,
+      textInputAction: TextInputAction.next,
       onSaved: (value) {
         amount2 = value;
       },
       onFieldSubmitted: (term) {
-        amount2Focus.unfocus();
+        fieldFocusChange(context, amount2Focus, account3Focus);
       },
       keyboardType: TextInputType.number,
       decoration: InputDecoration(labelText: 'Enter amount two'),
     );
+  }
+
+  TextFormField account3FormField(BuildContext context) {
+    return TextFormField(
+      controller: account3Controller,
+      focusNode: account3Focus,
+      textInputAction: TextInputAction.next,
+      onSaved: (value) {
+        account3 = value;
+      },
+      onFieldSubmitted: (term) {
+        fieldFocusChange(context, account3Focus, amount3Focus);
+      },
+      decoration: InputDecoration(labelText: 'Enter account three'),
+    );
+  }
+
+  TextFormField amount3FormField(BuildContext context) {
+    return TextFormField(
+      controller: amount3Controller,
+      focusNode: amount3Focus,
+      textInputAction: TextInputAction.next,
+      onSaved: (value) {
+        amount3 = value;
+      },
+      onFieldSubmitted: (term) {
+        fieldFocusChange(context, amount3Focus, account4Focus);
+      },
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(labelText: 'Enter amount three'),
+    );
+  }
+
+  TextFormField account4FormField(BuildContext context) {
+    return TextFormField(
+      controller: account4Controller,
+      focusNode: account4Focus,
+      textInputAction: TextInputAction.next,
+      onSaved: (value) {
+        account4 = value;
+      },
+      onFieldSubmitted: (term) {
+        fieldFocusChange(context, account4Focus, amount4Focus);
+      },
+      decoration: InputDecoration(labelText: 'Enter account four'),
+    );
+  }
+
+  TextFormField amount4FormField() {
+    return TextFormField(
+      controller: amount4Controller,
+      focusNode: amount4Focus,
+      textInputAction: TextInputAction.done,
+      onSaved: (value) {
+        amount4 = value;
+      },
+      onFieldSubmitted: (term) {
+        amount4Focus.unfocus();
+      },
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(labelText: 'Enter amount four'),
+    );
+  }
+}
+
+class TransactionStorage {
+  static Future<String> get _localPath async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String packageName = packageInfo.packageName;
+    final directory = await getExternalStorageDirectory();
+    return p.join(directory.path, 'Android', 'data', packageName, 'files');
+  }
+
+  static Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/.cone.ledger.txt');
+  }
+
+  static Future<File> writeTransaction(String transaction) async {
+    final file = await _localFile;
+    print(file);
+    return file.writeAsString('$transaction', mode: FileMode.append);
   }
 }
