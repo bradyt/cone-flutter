@@ -7,7 +7,7 @@ import 'package:package_info/package_info.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:cone/appbar.dart';
+enum Fields { date, description, account, amount, currency }
 
 // enum Currency { USD, EUR, JPY, GBP, AUD, CAD, CHF, CNH, SEK, NZD }
 List<String> currencies = [
@@ -100,7 +100,37 @@ class AddTransactionState extends State<AddTransaction> {
 
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: coneAppBar(context),
+      appBar: AppBar(
+        title: Text('cone'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: () {
+              _formKey.currentState.save();
+              if (_formKey.currentState.validate()) {
+                String result = showTransaction(
+                  date,
+                  description,
+                  account1,
+                  amount1,
+                  currency1,
+                  account2,
+                  amount2,
+                  account3,
+                  amount3,
+                  account4,
+                  amount4,
+                );
+                final snackBar = SnackBar(
+                  content: Text(result),
+                );
+                TransactionStorage.writeTransaction(result);
+                Scaffold.of(context).showSnackBar(snackBar);
+              }
+            },
+          )
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -109,40 +139,6 @@ class AddTransactionState extends State<AddTransaction> {
               dateFormField(context),
               descriptionFormField(context),
               postings(context),
-              Builder(
-                builder: (BuildContext context) {
-                  return RaisedButton(
-                    child: Text('Add'),
-                    onPressed: () {
-                      _formKey.currentState.save();
-                      String result = showTransaction(
-                        date,
-                        description,
-                        account1,
-                        amount1,
-                        currency1,
-                        account2,
-                        amount2,
-                        account3,
-                        amount3,
-                        account4,
-                        amount4,
-                      );
-                      final snackBar = SnackBar(
-                        content: Text(result),
-                      );
-                      TransactionStorage.writeTransaction(result);
-                      Scaffold.of(context).showSnackBar(snackBar);
-                    },
-                  );
-                },
-              ),
-              RaisedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('Done'),
-              ),
             ],
           ),
         ),
@@ -162,10 +158,10 @@ class AddTransactionState extends State<AddTransaction> {
             currency1FormField(context),
           ],
         ),
-        account2FormField(context),
-        amount2FormField(context),
-        account3FormField(context),
-        amount3FormField(context),
+        // account2FormField(context),
+        // amount2FormField(context),
+        // account3FormField(context),
+        // amount3FormField(context),
         account4FormField(context),
         amount4FormField(),
       ],
@@ -184,7 +180,7 @@ class AddTransactionState extends State<AddTransaction> {
         date = value;
       },
       decoration: InputDecoration(
-        labelText: 'Enter date',
+        labelText: 'Date',
         suffixIcon: IconButton(
           onPressed: () {
             chooseDate(context, dateController.text);
@@ -232,16 +228,21 @@ class AddTransactionState extends State<AddTransaction> {
   TextFormField descriptionFormField(BuildContext context) {
     return TextFormField(
       controller: descriptionController,
-      autofocus: true,
+      // autofocus: true,
       focusNode: descriptionFocus,
       textInputAction: TextInputAction.next,
+      validator: (value) {
+        if (value.isEmpty) {
+          return 'Please add a description, e.g., "Towel"';
+        }
+      },
       onSaved: (value) {
         description = value;
       },
       onFieldSubmitted: (term) {
         fieldFocusChange(context, descriptionFocus, account1Focus);
       },
-      decoration: InputDecoration(labelText: 'Enter description'),
+      decoration: InputDecoration(labelText: 'Description'),
     );
   }
 
@@ -256,7 +257,7 @@ class AddTransactionState extends State<AddTransaction> {
       onFieldSubmitted: (term) {
         fieldFocusChange(context, account1Focus, amount1Focus);
       },
-      decoration: InputDecoration(labelText: 'Enter account one'),
+      decoration: InputDecoration(labelText: 'Account one'),
     );
   }
 
@@ -265,14 +266,19 @@ class AddTransactionState extends State<AddTransaction> {
       controller: amount1Controller,
       focusNode: amount1Focus,
       textInputAction: TextInputAction.next,
+      validator: (value) {
+        if (value.isEmpty) {
+          return 'Please enter a first amount';
+        }
+      },
       onSaved: (value) {
         amount1 = value;
       },
       onFieldSubmitted: (term) {
-        fieldFocusChange(context, amount1Focus, account2Focus);
+        fieldFocusChange(context, amount1Focus, account4Focus);
       },
       keyboardType: TextInputType.number,
-      decoration: InputDecoration(labelText: 'Enter amount one'),
+      decoration: InputDecoration(labelText: 'Amount one'),
     );
   }
 
@@ -304,7 +310,7 @@ class AddTransactionState extends State<AddTransaction> {
       onFieldSubmitted: (term) {
         fieldFocusChange(context, account2Focus, amount2Focus);
       },
-      decoration: InputDecoration(labelText: 'Enter account two'),
+      decoration: InputDecoration(labelText: 'Account two'),
     );
   }
 
