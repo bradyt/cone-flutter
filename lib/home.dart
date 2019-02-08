@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
+import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Home extends StatelessWidget {
@@ -9,7 +9,16 @@ class Home extends StatelessWidget {
       appBar: AppBar(
         title: Text('cone'),
         actions: <Widget>[
-          IconButton(icon: Icon(Icons.settings), onPressed: () {}),
+          IconButton(
+            icon: Icon(Icons.share),
+            onPressed: () {
+              Share.share('check out my website https://example.com');
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {},
+          ),
         ],
       ),
       body: DefaultTextStyle(
@@ -38,10 +47,10 @@ You can read about plain-text accounting at ''',
         children: <TextSpan>[
           TextSpan(
               text: 'https://plaintextaccounting.org/',
-              style: Theme.of(context)
-                  .textTheme
-                  .body1
-                  .copyWith(color: Colors.blue),
+              style: TextStyle(
+                color: Colors.blue,
+                decoration: TextDecoration.underline,
+              ),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
                   launch(
@@ -67,10 +76,14 @@ cone will add the transaction to your ledger file, in the following format.
           TextSpan(
               text:
                   'https://thenounproject.com/Ryan-Spiering/collection/3d-shapes/',
-              style: Theme.of(context)
-                  .textTheme
-                  .body1
-                  .copyWith(color: Colors.blue),
+              style: TextStyle(
+                color: Colors.blue,
+                decoration: TextDecoration.underline,
+              ),
+              // style: Theme.of(context)
+              //     .textTheme
+              //     .body1
+              //     .copyWith(color: Colors.blue),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
                   launch(
@@ -79,9 +92,6 @@ cone will add the transaction to your ledger file, in the following format.
                 }),
           TextSpan(text: '.'),
         ],
-        // style: new TextStyle(
-        //   fontFamily: "RobotoMono",
-        // ),
       ),
     );
   }

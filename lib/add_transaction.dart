@@ -9,6 +9,17 @@ import 'package:path_provider/path_provider.dart';
 
 enum Fields { date, description, account, amount, currency }
 
+List<String> accounts = [
+  'assets:checking',
+  'assets:cash',
+  'expenses:food',
+  'expenses:groceries',
+  'expenses:transportation',
+  'expenses:rent',
+  'expenses:miscellaneous',
+  'equity',
+];
+
 // enum Currency { USD, EUR, JPY, GBP, AUD, CAD, CHF, CNH, SEK, NZD }
 List<String> currencies = [
   'USD',
@@ -93,7 +104,7 @@ class AddTransactionState extends State<AddTransaction> {
   void initState() {
     super.initState();
     dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    account1Controller.text = 'expenses:';
+    // account1Controller.text = 'expenses:';
     currency1 = 'USD';
     account2Controller.text = 'assets:checking';
   }
@@ -412,3 +423,21 @@ class TransactionStorage {
     return file.writeAsString('$transaction', mode: FileMode.append);
   }
 }
+
+// class AccountSearch extends SearchDelegate<String> {
+//   List<Widget> buildActions(BuildContext context) {
+//     return;
+//   }
+
+//   Widget buildLeading(BuildContext context) {
+//     return;
+//   }
+
+//   Widget buildResults(BuildContext context) {
+//     return;
+//   }
+
+//   Widget buildSuggestions(BuildContext context) {
+//     return;
+//   }
+// }
