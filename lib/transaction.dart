@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Transaction {
   String date;
   String description;
@@ -22,8 +24,9 @@ class Posting {
   String account;
   String amount;
   String currency;
+  Key key;
 
-  Posting({this.account, this.amount, this.currency});
+  Posting({this.key, this.account, this.amount, this.currency});
 
   String toString() {
     if (account == null) {

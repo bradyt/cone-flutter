@@ -8,41 +8,9 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:cone/transaction.dart';
+import 'package:cone/posting_widget.dart';
+import 'package:cone/posting_controller.dart';
 
-enum Fields { date, description, account, amount, currency }
-
-List<String> accounts = [
-  'assets:checking',
-  'assets:cash',
-  'expenses:food',
-  'expenses:groceries',
-  'expenses:transportation',
-  'expenses:rent',
-  'expenses:miscellaneous',
-  'equity',
-];
-
-// enum Currency { USD, EUR, JPY, GBP, AUD, CAD, CHF, CNH, SEK, NZD }
-List<String> currencies = [
-  'USD',
-  'EUR',
-  'JPY',
-  'GBP',
-  'AUD',
-  'CAD',
-  'CHF',
-  'CNY',
-  'SEK',
-  'NZD',
-];
-
-fieldFocusChange(
-    BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
-  currentFocus.unfocus();
-  FocusScope.of(context).requestFocus(nextFocus);
-}
-
-// https://grokonez.com/flutter/flutter-read-write-file-example-path-provider-dartio-example
 class AddTransaction extends StatefulWidget {
   AddTransactionState createState() => AddTransactionState();
 }
@@ -51,23 +19,28 @@ class AddTransactionState extends State<AddTransaction> {
   var dateController = TextEditingController();
   var descriptionController = TextEditingController();
 
-  String date;
-  String description;
-
   final FocusNode dateFocus = FocusNode();
   final FocusNode descriptionFocus = FocusNode();
 
   var _formKey = GlobalKey<FormState>();
 
-  List<Posting> postings = [];
+  List<PostingController> postingControllers = [];
 
   void initState() {
     super.initState();
     dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    postings = [
-      Posting(account: 'expenses:', amount: null, currency: 'USD'),
-      Posting(account: 'assets:checking', amount: null, currency: 'USD'),
-    ];
+    postingControllers.add(PostingController(
+      key: UniqueKey(),
+      accountController: TextEditingController(text: 'expenses:'),
+      amountController: TextEditingController(),
+      currencyController: TextEditingController(text: 'USD'),
+    ));
+    postingControllers.add(PostingController(
+      key: UniqueKey(),
+      accountController: TextEditingController(text: 'assets:checking'),
+      amountController: TextEditingController(),
+      currencyController: TextEditingController(text: 'USD'),
+    ));
   }
 
   Widget build(BuildContext context) {
@@ -90,46 +63,24 @@ class AddTransactionState extends State<AddTransaction> {
             children: <Widget>[
               dateAndDescriptionWidget(context),
             ]..addAll(
-                List<int>.generate(postings.length, (i) => i + 1).map((i) {
-                  final posting = postings[i];
+                List<int>.generate(postingControllers.length, (i) => i)
+                    .map((i) {
+                  final postingController = postingControllers[i];
                   return Dismissible(
-                    key: posting.key,
-                    onDismissed: (direction) {
-                      setState(() {
-                        postings.removeAt(i);
-                      });
-                    },
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Account $i',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Amount $i',
-                              border: OutlineInputBorder(),
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        Flexible(
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Currency $i',
-                              border: OutlineInputBorder(),
-                            ),
-                            initialValue: 'USD',
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                      key: postingController.key,
+                      onDismissed: (direction) {
+                        setState(() {
+                          postingControllers.removeAt(i);
+                        });
+                      },
+                      child: PostingWidget(
+                        context: context,
+                        index: i,
+                        accountController: postingController.accountController,
+                        amountController: postingController.amountController,
+                        currencyController:
+                            postingController.currencyController,
+                      ));
                 }),
               ),
           ),
@@ -143,66 +94,43 @@ class AddTransactionState extends State<AddTransaction> {
   }
 
   void addPosting() {
-    postings.add(Posting(account: null, amount: null, currency: null));
-    // numberOfPostings++;
-    // int n = postingSubforms.length;
-    // postingSubforms.add(Row(
-    //   children: [
-    //     Expanded(
-    //       child: TextFormField(
-    //         decoration: InputDecoration(
-    //           labelText: 'Account $n',
-    //           border: OutlineInputBorder(),
-    //         ),
-    //         initialValue:
-    //             (n == 0) ? 'expenses:' : ((n == 1) ? 'assets:checking' : null),
-    //       ),
-    //     ),
-    //     Expanded(
-    //       child: TextFormField(
-    //         decoration: InputDecoration(labelText: 'Amount $n'),
-    //         keyboardType: TextInputType.number,
-    //       ),
-    //     ),
-    //     Flexible(
-    //       child: TextFormField(
-    //         decoration: InputDecoration(labelText: 'Currency $n'),
-    //         initialValue: 'USD',
-    //       ),
-    //     ),
-    //   ],
-    // ));
+    postingControllers.add(PostingController(
+      key: UniqueKey(),
+      accountController: TextEditingController(),
+      amountController: TextEditingController(),
+      currencyController: TextEditingController(),
+    ));
   }
 
   void submitTransaction(BuildContext context) {
     _formKey.currentState.save();
-    // Transaction txn = Transaction(
-    //   date,
-    //   description,
-    //   postingStuff
-    //       .map((it) => Posting(
-    //             'hello',
-    //             null,
-    //             null,
-    //           ))
-    //       .toList(),
-    // );
-    // print(txn);
-    // if (_formKey.currentState.validate()) {
-    //   String result = txn.toString();
-    //   final snackBar = SnackBar(
-    //     content: RichText(
-    //       text: TextSpan(
-    //         text: result,
-    //         style: TextStyle(
-    //           fontFamily: "RobotoMono",
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    //   TransactionStorage.writeTransaction('\n\n' + result);
-    //   Scaffold.of(context).showSnackBar(snackBar);
-    // }
+    Transaction txn = Transaction(
+      dateController.text,
+      descriptionController.text,
+      postingControllers
+          .map((pc) => Posting(
+                account: pc.accountController.text,
+                amount: pc.amountController.text,
+                currency: pc.currencyController.text,
+              ))
+          .toList(),
+    );
+    print(txn);
+    if (_formKey.currentState.validate()) {
+      String result = txn.toString();
+      final snackBar = SnackBar(
+        content: RichText(
+          text: TextSpan(
+            text: result,
+            style: TextStyle(
+              fontFamily: "RobotoMono",
+            ),
+          ),
+        ),
+      );
+      TransactionStorage.writeTransaction('\n\n' + result);
+      Scaffold.of(context).showSnackBar(snackBar);
+    }
   }
 
   Row dateAndDescriptionWidget(BuildContext context) {
@@ -229,7 +157,7 @@ class AddTransactionState extends State<AddTransaction> {
         fieldFocusChange(context, dateFocus, descriptionFocus);
       },
       onSaved: (value) {
-        date = value;
+        dateController.text = value;
       },
       decoration: InputDecoration(
         border: OutlineInputBorder(),
@@ -260,7 +188,7 @@ class AddTransactionState extends State<AddTransaction> {
     setState(() {
       dateController.text = DateFormat('yyyy-MM-dd').format(result);
     });
-    fieldFocusChange(context, dateFocus, descriptionFocus);
+    // fieldFocusChange(context, dateFocus, descriptionFocus);
   }
 
   DateTime convertToDate(String input) {
@@ -275,7 +203,7 @@ class AddTransactionState extends State<AddTransaction> {
   TextFormField descriptionFormField(BuildContext context) {
     return TextFormField(
       controller: descriptionController,
-      // autofocus: true,
+      autofocus: true,
       focusNode: descriptionFocus,
       textInputAction: TextInputAction.next,
       validator: (value) {
@@ -284,10 +212,13 @@ class AddTransactionState extends State<AddTransaction> {
         }
       },
       onSaved: (value) {
-        description = value;
+        descriptionController.text = value;
       },
       onFieldSubmitted: (term) {
         descriptionFocus.unfocus();
+        if (postingControllers.length != 0) {
+          // FocusScope.of(context).requestFocus();
+        }
       },
       decoration: InputDecoration(
         labelText: 'Description',
@@ -295,7 +226,12 @@ class AddTransactionState extends State<AddTransaction> {
       ),
     );
   }
-}
+
+  fieldFocusChange(
+      BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
+    currentFocus.unfocus();
+    FocusScope.of(context).requestFocus(nextFocus);
+  }
 
 // class AccountFormField extends TextFormField {
 //   AccountFormField(int index, )
@@ -306,6 +242,8 @@ class AddTransactionState extends State<AddTransaction> {
 //           ),
 
 // }
+
+}
 
 class PostingFieldStuff {
   TextEditingController accountController = TextEditingController();
@@ -406,3 +344,30 @@ class TransactionStorage {
     return file.writeAsString('$transaction', mode: FileMode.append);
   }
 }
+
+enum Fields { date, description, account, amount, currency }
+
+List<String> accounts = [
+  'assets:checking',
+  'assets:cash',
+  'expenses:food',
+  'expenses:groceries',
+  'expenses:transportation',
+  'expenses:rent',
+  'expenses:miscellaneous',
+  'equity',
+];
+
+// enum Currency { USD, EUR, JPY, GBP, AUD, CAD, CHF, CNH, SEK, NZD }
+List<String> currencies = [
+  'USD',
+  'EUR',
+  'JPY',
+  'GBP',
+  'AUD',
+  'CAD',
+  'CHF',
+  'CNY',
+  'SEK',
+  'NZD',
+];
