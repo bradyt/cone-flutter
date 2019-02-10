@@ -5,6 +5,10 @@ class PostingWidget extends StatelessWidget {
   final amountController;
   final currencyController;
   final int index;
+  final FocusNode accountFocus;
+  final FocusNode amountFocus;
+  final FocusNode currencyFocus;
+  final FocusNode nextPostingFocus;
 
   final BuildContext context;
 
@@ -14,6 +18,10 @@ class PostingWidget extends StatelessWidget {
     this.accountController,
     this.amountController,
     this.currencyController,
+    this.accountFocus,
+    this.amountFocus,
+    this.currencyFocus,
+    this.nextPostingFocus,
   });
 
   Widget build(BuildContext context) {
@@ -27,6 +35,12 @@ class PostingWidget extends StatelessWidget {
               labelText: 'Account $j',
               border: OutlineInputBorder(),
             ),
+            focusNode: accountFocus,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (term) {
+              accountFocus.unfocus();
+              FocusScope.of(context).requestFocus(amountFocus);
+            },
           ),
         ),
         Expanded(
@@ -37,6 +51,12 @@ class PostingWidget extends StatelessWidget {
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
+            focusNode: amountFocus,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (term) {
+              amountFocus.unfocus();
+              FocusScope.of(context).requestFocus(currencyFocus);
+            },
           ),
         ),
         Flexible(
@@ -46,6 +66,16 @@ class PostingWidget extends StatelessWidget {
               labelText: 'Currency $j',
               border: OutlineInputBorder(),
             ),
+            focusNode: currencyFocus,
+            textInputAction: (nextPostingFocus != null)
+                ? TextInputAction.next
+                : TextInputAction.done,
+            onFieldSubmitted: (term) {
+              currencyFocus.unfocus();
+              if (nextPostingFocus != null) {
+                FocusScope.of(context).requestFocus(nextPostingFocus);
+              }
+            },
           ),
         ),
       ],

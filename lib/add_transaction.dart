@@ -34,12 +34,18 @@ class AddTransactionState extends State<AddTransaction> {
       accountController: TextEditingController(text: 'expenses:'),
       amountController: TextEditingController(),
       currencyController: TextEditingController(text: 'USD'),
+      accountFocus: FocusNode(),
+      amountFocus: FocusNode(),
+      currencyFocus: FocusNode(),
     ));
     postingControllers.add(PostingController(
       key: UniqueKey(),
       accountController: TextEditingController(text: 'assets:checking'),
       amountController: TextEditingController(),
       currencyController: TextEditingController(text: 'USD'),
+      accountFocus: FocusNode(),
+      amountFocus: FocusNode(),
+      currencyFocus: FocusNode(),
     ));
   }
 
@@ -80,6 +86,12 @@ class AddTransactionState extends State<AddTransaction> {
                         amountController: postingController.amountController,
                         currencyController:
                             postingController.currencyController,
+                        accountFocus: postingController.accountFocus,
+                        amountFocus: postingController.amountFocus,
+                        currencyFocus: postingController.currencyFocus,
+                        nextPostingFocus: (i < postingControllers.length - 1)
+                            ? postingControllers[i + 1].accountFocus
+                            : null,
                       ));
                 }),
               ),
@@ -98,7 +110,10 @@ class AddTransactionState extends State<AddTransaction> {
       key: UniqueKey(),
       accountController: TextEditingController(),
       amountController: TextEditingController(),
-      currencyController: TextEditingController(),
+      currencyController: TextEditingController(text: 'USD'),
+      accountFocus: FocusNode(),
+      amountFocus: FocusNode(),
+      currencyFocus: FocusNode(),
     ));
   }
 
@@ -205,7 +220,9 @@ class AddTransactionState extends State<AddTransaction> {
       controller: descriptionController,
       autofocus: true,
       focusNode: descriptionFocus,
-      textInputAction: TextInputAction.next,
+      textInputAction: (postingControllers.length > 0)
+          ? TextInputAction.next
+          : TextInputAction.done,
       validator: (value) {
         if (value.isEmpty) {
           return 'Please add a description, e.g., "Towel"';
@@ -215,9 +232,10 @@ class AddTransactionState extends State<AddTransaction> {
         descriptionController.text = value;
       },
       onFieldSubmitted: (term) {
-        descriptionFocus.unfocus();
-        if (postingControllers.length != 0) {
-          // FocusScope.of(context).requestFocus();
+        if (postingControllers.length > 0) {
+          descriptionFocus.unfocus();
+          FocusScope.of(context)
+              .requestFocus(postingControllers[0].accountFocus);
         }
       },
       decoration: InputDecoration(
